@@ -1,0 +1,610 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lockstep Escape Co.</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:#101114; --panel:#191b20; --text:#f5f5f5;
+  --muted:#a4a6ad; --accent:#d6ad68; --border:#30323a;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Arial,Helvetica,sans-serif;
+}
+header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:20px 6%; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:#101114ed; z-index:5;
+}
+.brand {
+  border:0; background:none; color:white; cursor:pointer;
+  font-size:19px; font-weight:900; letter-spacing:1px;
+  padding:8px 0; user-select:none;
+}
+.brand span { color:var(--accent); }
+nav { display:flex; gap:20px; flex-wrap:wrap; }
+nav a { color:var(--muted); text-decoration:none; cursor:pointer; }
+nav a:hover { color:var(--accent); }
+main { max-width:1100px; margin:auto; padding:55px 22px; }
+.hero { padding:70px 0; }
+.eyebrow { color:var(--accent); letter-spacing:3px; font-size:12px; }
+h1 { font-size:clamp(40px,7vw,72px); margin:15px 0; }
+h2 { font-size:30px; }
+p { color:var(--muted); line-height:1.7; }
+button,.button {
+  background:var(--accent); color:#171717; border:0;
+  padding:12px 18px; border-radius:5px; cursor:pointer;
+  font-weight:bold; text-decoration:none; display:inline-block;
+}
+button:hover,.button:hover { filter:brightness(1.1); }
+.secondary { background:#30323a; color:white; }
+input,select,textarea {
+  width:100%; padding:12px; background:#101114;
+  color:white; border:1px solid var(--border);
+  border-radius:5px; margin:7px 0 15px;
+}
+label { font-size:13px; color:var(--muted); }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px; }
+.card {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:9px; padding:22px; margin-bottom:15px;
+}
+.card h3 { margin-top:0; }
+.section { margin:55px 0; }
+.hidden { display:none !important; }
+.muted { color:var(--muted); }
+footer { border-top:1px solid var(--border); padding:30px 6%; color:var(--muted); }
+.modal {
+  position:fixed; inset:0; z-index:20; background:#000b;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal-box {
+  background:var(--panel); border:1px solid var(--border);
+  padding:28px; border-radius:10px; width:min(400px,100%);
+}
+.admin-top { display:flex; justify-content:space-between; align-items:center; gap:15px; flex-wrap:wrap; }
+.tabs { display:flex; gap:8px; flex-wrap:wrap; margin:25px 0; }
+.tabs button { background:#30323a; color:white; }
+.tabs button.active { background:var(--accent); color:#171717; }
+.status { color:var(--accent); font-size:13px; }
+.game-image { width:100%; height:150px; object-fit:cover; border-radius:5px; }
+.row-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+@media(max-width:650px) {
+  header { align-items:flex-start; flex-direction:column; gap:15px; }
+  nav { gap:13px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <button class="brand" id="brandLogo" type="button" aria-label="Lockstep Escape Co.">
+    LOCKSTEP <span>ESCAPE CO.</span>
+  </button>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#experiences">Experiences</a>
+    <a href="#about">About</a>
+    <a href="#booking">Book</a>
+    <a href="#giftcards">Gift Cards</a>
+  </nav>
+</header>
+
+<div id="publicSite">
+<main>
+  <section class="hero" id="home">
+    <div class="eyebrow">LOCKSTEP ESCAPE CO.</div>
+    <h1>Think fast.<br>Escape together.</h1>
+    <p>Enter a world of puzzles, hidden clues, and unforgettable challenges.</p>
+    <a class="button" href="#experiences">Explore Experiences</a>
+  </section>
+
+  <section class="section" id="experiences">
+    <div class="eyebrow">OUR EXPERIENCES</div>
+    <h2>Choose your escape.</h2>
+    <div id="publicGames" class="grid">
+      <p>Loading experiences...</p>
+    </div>
+  </section>
+
+  <section class="section" id="about">
+    <div class="eyebrow">ABOUT US</div>
+    <h2>More than a game.</h2>
+    <p>Lockstep Escape Co. creates immersive escape-room experiences where teamwork, observation, and problem-solving matter.</p>
+  </section>
+
+  <section class="section" id="booking">
+    <div class="eyebrow">RESERVATIONS</div>
+    <h2>Request a booking.</h2>
+    <div class="card">
+      <form id="bookingForm">
+        <label>Your name</label>
+        <input name="customer_name" required>
+        <label>Email</label>
+        <input name="customer_email" type="email" required>
+        <label>Phone (optional)</label>
+        <input name="customer_phone" type="tel">
+        <label>Experience</label>
+        <select name="game_id" id="bookingGame" required></select>
+        <label>Date and time</label>
+        <input name="booking_time" type="datetime-local" required>
+        <label>Number of players</label>
+        <input name="party_size" type="number" min="1" max="8" value="2" required>
+        <button type="submit">Send booking request</button>
+      </form>
+      <p id="bookingMessage"></p>
+    </div>
+  </section>
+
+  <section class="section" id="giftcards">
+    <div class="eyebrow">GIFT CARDS</div>
+    <h2>Check a gift card.</h2>
+    <div class="card">
+      <form id="giftCheckForm">
+        <label>Gift card code</label>
+        <input id="giftCodeInput" required>
+        <button type="submit">Check balance</button>
+      </form>
+      <p id="giftMessage"></p>
+    </div>
+  </section>
+</main>
+<footer>© <span id="year"></span> Lockstep Escape Co.</footer>
+</div>
+
+<!-- Developer access modal -->
+<div id="codeModal" class="modal hidden">
+  <div class="modal-box">
+    <h2>Developer access</h2>
+    <p>Enter your access code to continue.</p>
+    <form id="codeForm">
+      <input id="accessInput" type="password" placeholder="Access code" required autocomplete="off">
+      <button type="submit">Continue</button>
+      <button type="button" class="secondary" id="closeCode">Cancel</button>
+    </form>
+    <p id="codeError"></p>
+  </div>
+</div>
+
+<!-- Developer dashboard -->
+<div id="adminPanel" class="hidden">
+<main>
+  <div class="admin-top">
+    <div>
+      <div class="eyebrow">LOCKSTEP ESCAPE CO.</div>
+      <h1 style="font-size:38px">Developer panel</h1>
+    </div>
+    <button class="secondary" id="exitAdmin">Exit panel</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="games">Experiences</button>
+    <button data-tab="bookings">Bookings</button>
+    <button data-tab="giftcardsAdmin">Gift cards</button>
+  </div>
+
+  <section id="tab-overview" class="admin-tab">
+    <h2>Dashboard overview</h2>
+    <div class="grid">
+      <div class="card"><p>Total experiences</p><h2 id="statGames">0</h2></div>
+      <div class="card"><p>Booking requests</p><h2 id="statBookings">0</h2></div>
+      <div class="card"><p>Gift cards</p><h2 id="statGiftCards">0</h2></div>
+    </div>
+  </section>
+
+  <section id="tab-games" class="admin-tab hidden">
+    <h2>Manage experiences</h2>
+    <div class="card">
+      <h3 id="gameFormTitle">Add an experience</h3>
+      <form id="gameForm">
+        <input type="hidden" id="editGameId">
+        <label>Experience name</label>
+        <input id="gameTitle" required>
+        <label>Description</label>
+        <textarea id="gameDescription" rows="3"></textarea>
+        <label>Duration (minutes)</label>
+        <input id="gameDuration" type="number" min="1" value="60" required>
+        <label>Minimum players</label>
+        <input id="gameMin" type="number" min="1" value="2" required>
+        <label>Maximum players</label>
+        <input id="gameMax" type="number" min="1" value="8" required>
+        <label>Price per booking (dollars)</label>
+        <input id="gamePrice" type="number" min="0" step="0.01" value="0" required>
+        <label>Image URL (optional)</label>
+        <input id="gameImage" type="url">
+        <button type="submit">Save experience</button>
+        <button type="button" class="secondary" id="cancelGameEdit">Clear</button>
+      </form>
+    </div>
+    <div id="adminGames"></div>
+  </section>
+
+  <section id="tab-bookings" class="admin-tab hidden">
+    <h2>Booking requests</h2>
+    <div id="adminBookings"></div>
+  </section>
+
+  <section id="tab-giftcardsAdmin" class="admin-tab hidden">
+    <h2>Manage gift cards</h2>
+    <div class="card">
+      <form id="createGiftForm">
+        <label>Gift card code</label>
+        <input id="newGiftCode" required>
+        <label>Initial value ($)</label>
+        <input id="newGiftValue" type="number" min="0.01" step="0.01" required>
+        <button type="submit">Create gift card</button>
+      </form>
+    </div>
+    <div id="adminGiftCards"></div>
+  </section>
+</main>
+</div>
+
+<script>
+const SUPABASE_URL = "https://ttobwbntoikgwzpeiffx.supabase.co";
+const SUPABASE_KEY = "sb_publishable_tM2_dQIFgSyvzBON2ewdpw_SiyGn6pe";
+const ACCESS_CODE = "9988";
+
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let games = [];
+let bookings = [];
+let giftCards = [];
+let logoClicks = 0;
+let logoTimer = null;
+
+const $ = id => document.getElementById(id);
+const money = cents => "$" + (Number(cents || 0) / 100).toFixed(2);
+const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, c => ({
+  "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;"
+}[c]));
+
+function showMessage(id, message) {
+  $(id).textContent = message;
+}
+
+function showCodeModal() {
+  $("codeModal").classList.remove("hidden");
+  $("accessInput").value = "";
+  $("codeError").textContent = "";
+  $("accessInput").focus();
+}
+
+// The logo is a real button. Six quick clicks open developer access.
+$("brandLogo").addEventListener("click", event => {
+  event.preventDefault();
+  event.stopPropagation();
+
+  logoClicks++;
+  clearTimeout(logoTimer);
+
+  logoTimer = setTimeout(() => {
+    logoClicks = 0;
+  }, 1800);
+
+  if (logoClicks >= 6) {
+    logoClicks = 0;
+    showCodeModal();
+  }
+});
+
+$("closeCode").addEventListener("click", () => {
+  $("codeModal").classList.add("hidden");
+});
+
+$("codeForm").addEventListener("submit", event => {
+  event.preventDefault();
+
+  if ($("accessInput").value === ACCESS_CODE) {
+    $("codeModal").classList.add("hidden");
+    $("publicSite").classList.add("hidden");
+    $("adminPanel").classList.remove("hidden");
+    loadAdmin();
+  } else {
+    $("codeError").textContent = "Incorrect access code.";
+    $("accessInput").select();
+  }
+});
+
+$("exitAdmin").addEventListener("click", () => {
+  $("adminPanel").classList.add("hidden");
+  $("publicSite").classList.remove("hidden");
+  loadGames();
+});
+
+document.querySelectorAll("[data-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-tab]").forEach(b => b.classList.remove("active"));
+    button.classList.add("active");
+
+    document.querySelectorAll(".admin-tab").forEach(section => section.classList.add("hidden"));
+    $("tab-" + button.dataset.tab).classList.remove("hidden");
+  });
+});
+
+async function loadGames() {
+  const { data, error } = await db.from("games").select("*").order("created_at", {ascending:false});
+
+  if (error) {
+    $("publicGames").innerHTML = "<p>Could not load experiences. Check your database settings.</p>";
+    return;
+  }
+
+  games = data || [];
+  renderPublicGames();
+  populateBookingOptions();
+}
+
+function renderPublicGames() {
+  const published = games.filter(game => game.is_published);
+
+  if (!published.length) {
+    $("publicGames").innerHTML = "<p>No experiences are available yet. Check back soon.</p>";
+    return;
+  }
+
+  $("publicGames").innerHTML = published.map(game => `
+    <article class="card">
+      ${game.image_url ? `<img class="game-image" src="${escapeHTML(game.image_url)}" alt="">` : ""}
+      <h3>${escapeHTML(game.title)}</h3>
+      <p>${escapeHTML(game.description)}</p>
+      <p>${game.duration_minutes} minutes · ${game.players_min}–${game.players_max} players</p>
+      <strong>${money(game.price_cents)}</strong>
+      <p><a class="button" href="#booking">Request booking</a></p>
+    </article>
+  `).join("");
+}
+
+function populateBookingOptions() {
+  const published = games.filter(g => g.is_published);
+  $("bookingGame").innerHTML = published.length
+    ? published.map(g => `<option value="${g.id}">${escapeHTML(g.title)}</option>`).join("")
+    : `<option value="">No experiences available</option>`;
+}
+
+$("bookingForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const form = new FormData(event.target);
+  const game = games.find(g => g.id === form.get("game_id"));
+  const partySize = Number(form.get("party_size"));
+
+  if (!game) return showMessage("bookingMessage", "Please choose an available experience.");
+  if (partySize < game.players_min || partySize > game.players_max) {
+    return showMessage("bookingMessage", `This experience allows ${game.players_min}–${game.players_max} players.`);
+  }
+
+  const bookingTime = new Date(form.get("booking_time"));
+  if (Number.isNaN(bookingTime.getTime()) || bookingTime <= new Date()) {
+    return showMessage("bookingMessage", "Please choose a future date and time.");
+  }
+
+  const { error } = await db.from("bookings").insert({
+    game_id: game.id,
+    customer_name: form.get("customer_name"),
+    customer_email: form.get("customer_email"),
+    customer_phone: form.get("customer_phone"),
+    booking_time: bookingTime.toISOString(),
+    party_size: partySize,
+    status: "pending"
+  });
+
+  if (error) {
+    showMessage("bookingMessage", "Booking request failed: " + error.message);
+  } else {
+    showMessage("bookingMessage", "Your booking request was submitted!");
+    event.target.reset();
+    populateBookingOptions();
+  }
+});
+
+$("giftCheckForm").addEventListener("submit", async event => {
+  event.preventDefault();
+  const code = $("giftCodeInput").value.trim();
+
+  const { data, error } = await db.from("gift_cards")
+    .select("remaining_value_cents,is_active")
+    .eq("code", code)
+    .maybeSingle();
+
+  if (error) return showMessage("giftMessage", "Could not check the gift card.");
+  if (!data || !data.is_active) return showMessage("giftMessage", "Gift card not found or inactive.");
+
+  showMessage("giftMessage", "Remaining balance: " + money(data.remaining_value_cents));
+});
+
+async function loadAdmin() {
+  const results = await Promise.all([
+    db.from("games").select("*").order("created_at", {ascending:false}),
+    db.from("bookings").select("*").order("created_at", {ascending:false}),
+    db.from("gift_cards").select("*").order("created_at", {ascending:false})
+  ]);
+
+  if (results.some(result => result.error)) {
+    alert("Some dashboard data could not load. Check your Supabase policies.");
+  }
+
+  games = results[0].data || [];
+  bookings = results[1].data || [];
+  giftCards = results[2].data || [];
+
+  $("statGames").textContent = games.length;
+  $("statBookings").textContent = bookings.length;
+  $("statGiftCards").textContent = giftCards.length;
+
+  renderAdminGames();
+  renderAdminBookings();
+  renderAdminGiftCards();
+}
+
+function renderAdminGames() {
+  $("adminGames").innerHTML = games.length ? games.map(game => `
+    <div class="card">
+      <h3>${escapeHTML(game.title)}</h3>
+      <p>${escapeHTML(game.description)}</p>
+      <p>${game.duration_minutes} min · ${game.players_min}–${game.players_max} players · ${money(game.price_cents)}</p>
+      <p class="status">${game.is_published ? "Published" : "Unpublished"}</p>
+      <div class="row-actions">
+        <button onclick="editGame('${game.id}')">Edit</button>
+        <button class="secondary" onclick="togglePublish('${game.id}',${!game.is_published})">${game.is_published ? "Unpublish" : "Publish"}</button>
+        <button class="secondary" onclick="deleteGame('${game.id}')">Delete</button>
+      </div>
+    </div>
+  `).join("") : "<p>No experiences created yet. Add your first one above.</p>";
+}
+
+$("gameForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const id = $("editGameId").value;
+  const min = Number($("gameMin").value);
+  const max = Number($("gameMax").value);
+
+  if (min < 1 || max < min) return alert("Check the player limits.");
+
+  const record = {
+    title: $("gameTitle").value.trim(),
+    description: $("gameDescription").value.trim(),
+    duration_minutes: Number($("gameDuration").value),
+    players_min: min,
+    players_max: max,
+    price_cents: Math.round(Number($("gamePrice").value) * 100),
+    image_url: $("gameImage").value.trim()
+  };
+
+  const result = id
+    ? await db.from("games").update(record).eq("id", id)
+    : await db.from("games").insert(record);
+
+  if (result.error) return alert("Could not save experience: " + result.error.message);
+
+  event.target.reset();
+  $("editGameId").value = "";
+  $("gameDuration").value = 60;
+  $("gameMin").value = 2;
+  $("gameMax").value = 8;
+  $("gamePrice").value = 0;
+  $("gameFormTitle").textContent = "Add an experience";
+  await loadAdmin();
+  await loadGames();
+});
+
+window.editGame = id => {
+  const game = games.find(g => g.id === id);
+  if (!game) return;
+
+  $("editGameId").value = game.id;
+  $("gameTitle").value = game.title;
+  $("gameDescription").value = game.description || "";
+  $("gameDuration").value = game.duration_minutes;
+  $("gameMin").value = game.players_min;
+  $("gameMax").value = game.players_max;
+  $("gamePrice").value = (game.price_cents / 100).toFixed(2);
+  $("gameImage").value = game.image_url || "";
+  $("gameFormTitle").textContent = "Edit experience";
+  window.scrollTo({top:0,behavior:"smooth"});
+};
+
+$("cancelGameEdit").addEventListener("click", () => {
+  $("gameForm").reset();
+  $("editGameId").value = "";
+  $("gameDuration").value = 60;
+  $("gameMin").value = 2;
+  $("gameMax").value = 8;
+  $("gamePrice").value = 0;
+  $("gameFormTitle").textContent = "Add an experience";
+});
+
+window.togglePublish = async (id, value) => {
+  const { error } = await db.from("games").update({is_published:value}).eq("id",id);
+  if (error) return alert(error.message);
+  await loadAdmin();
+  await loadGames();
+};
+
+window.deleteGame = async id => {
+  if (!confirm("Delete this experience?")) return;
+  const { error } = await db.from("games").delete().eq("id",id);
+  if (error) return alert(error.message);
+  await loadAdmin();
+  await loadGames();
+};
+
+function renderAdminBookings() {
+  $("adminBookings").innerHTML = bookings.length ? bookings.map(booking => {
+    const game = games.find(g => g.id === booking.game_id);
+    return `
+      <div class="card">
+        <h3>${escapeHTML(booking.customer_name)}</h3>
+        <p>${escapeHTML(booking.customer_email)} · ${escapeHTML(booking.customer_phone)}</p>
+        <p>Experience: ${escapeHTML(game?.title || "Deleted experience")}</p>
+        <p>When: ${new Date(booking.booking_time).toLocaleString()}</p>
+        <p>Players: ${booking.party_size}</p>
+        <p class="status">Status: ${escapeHTML(booking.status)}</p>
+      </div>
+    `;
+  }).join("") : "<p>No booking requests yet.</p>";
+}
+
+$("createGiftForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const code = $("newGiftCode").value.trim();
+  const value = Math.round(Number($("newGiftValue").value) * 100);
+
+  if (!code || value <= 0) return alert("Enter a valid code and amount.");
+
+  const { error } = await db.from("gift_cards").insert({
+    code,
+    initial_value_cents:value,
+    remaining_value_cents:value,
+    is_active:true
+  });
+
+  if (error) return alert("Could not create gift card: " + error.message);
+
+  event.target.reset();
+  await loadAdmin();
+});
+
+function renderAdminGiftCards() {
+  $("adminGiftCards").innerHTML = giftCards.length ? giftCards.map(card => `
+    <div class="card">
+      <h3>${escapeHTML(card.code)}</h3>
+      <p>Starting value: ${money(card.initial_value_cents)}</p>
+      <p>Remaining: ${money(card.remaining_value_cents)}</p>
+      <p class="status">${card.is_active ? "Active" : "Inactive"}</p>
+      <button class="secondary" onclick="toggleGift('${card.id}',${!card.is_active})">
+        ${card.is_active ? "Deactivate" : "Activate"}
+      </button>
+    </div>
+  `).join("") : "<p>No gift cards created yet.</p>";
+}
+
+window.toggleGift = async (id, value) => {
+  const { error } = await db.from("gift_cards").update({is_active:value}).eq("id",id);
+  if (error) return alert(error.message);
+  await loadAdmin();
+};
+
+$("year").textContent = new Date().getFullYear();
+
+async function startSite() {
+  await loadGames();
+}
+
+startSite();
+
+// Keep published experiences refreshed across devices.
+db.channel("games-changes")
+  .on("postgres_changes", {event:"*",schema:"public",table:"games"}, () => loadGames())
+  .subscribe();
+</script>
+</body>
+</html>
